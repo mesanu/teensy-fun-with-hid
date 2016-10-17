@@ -1,8 +1,8 @@
 #ifndef SHAPES_H
 #define PI 3.14159
 typedef struct coords {
-  int x;
-  int y;
+  double x;
+  double y;
 } XYCoords;
 
 class Curve {
@@ -20,9 +20,20 @@ class Curve {
 class Circle: public Curve {
   public:
     Circle(double radius, double freq);
-    void recalcCurrent();
   private:
+    void recalcCurrent();
     double radius;
+    double freq;
+};
+
+class Fig8: public Curve {
+  public:
+    Fig8(double a, double freq);
+  private:
+    unsigned int thresh;
+    int sign;
+    void recalcCurrent();
+    double a;
     double freq;
 };
 

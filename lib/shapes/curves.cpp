@@ -30,7 +30,25 @@ Circle::Circle(double radius,double freq){
   this->radius=radius;
   this->freq=freq;
 }
+
 void Circle::recalcCurrent(){
-  this->currentCoords.x=radius*cos(freq*2*PI*(double)(++stepCount)/1000);
-  this->currentCoords.y=radius*sin(freq*2*PI*(double)(++stepCount)/1000);
+  this->stepCount++;
+  this->currentCoords.x=radius*cos(freq*2*PI*(double)(stepCount)/1000);
+  this->currentCoords.y=radius*sin(freq*2*PI*(double)(stepCount)/1000);
+}
+
+Fig8::Fig8(double a, double freq){
+  this->a=a;
+  this->freq=freq;
+  this->thresh=(unsigned int)(1000/freq);
+  this->sign=1;
+}
+
+void Fig8::recalcCurrent(){
+  this->stepCount++;
+  if((this->stepCount%this->thresh)==0){
+    this->sign*=(-1);
+  }
+  this->currentCoords.x+=2*this->sign;
+  this->currentCoords.y=a*sin(freq*2*PI*(double)(this->stepCount)/1000);
 }
