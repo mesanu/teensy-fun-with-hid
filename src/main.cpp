@@ -1,6 +1,7 @@
 #include "mbed.h"
 #include "curves.h"
 #include "USBMouse.h"
+#include "USBKeyboard.h"
 #include "rtos.h"
 DigitalOut myled(LED1);
 DigitalIn circlesEn(D8);
@@ -25,7 +26,6 @@ void goInFig8(USBMouse *mouseP){
 }
 
 int main() {
-  USBMouse mouse;
   Thread thread;
   myled.write(1);
 
@@ -33,15 +33,17 @@ int main() {
   fig8En.mode(PullDown);
   while(1){
      if(circlesEn.read() == 1)
-     {
-          thread.start(&mouse,goInCircles);
-          Thread::wait(osWaitForever);
+          {
+               USBMouse mouse;
+               thread.start(&mouse,goInCircles);
+               Thread::wait(osWaitForever);
+          }
+          else if(fig8En.read() == 1)
+          {
+               USBMouse mouse;
+               thread.start(&mouse,goInFig8);
+               Thread::wait(osWaitForever);
+          }
      }
-     else if(fig8En.read() == 1)
-     {
-          thread.start(&mouse,goInFig8);
-          Thread::wait(osWaitForever);
-     }
-     Thread::wait(1);
-     }
+     Thread::wait(0.1);
 }
