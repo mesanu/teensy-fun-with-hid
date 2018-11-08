@@ -1,49 +1,26 @@
-#include "mbed.h"
-#include "curves.h"
-#include "USBMouse.h"
-#include "USBKeyboard.h"
+#include <mbed.h>
 #include "rtos.h"
-DigitalOut myled(LED1);
-DigitalIn circlesEn(D8);
-DigitalIn fig8En(D9);
+#include "USBSerial.h"
 
-void goInCircles(USBMouse *mouseP){
-  Circle circle(60,5);
-  while(1){
-    XYCoords coords=circle.deltaStep();
-    ((USBMouse*)mouseP)->move(coords.x, coords.y);
-    Thread::wait(10);
-  }
+#include "controller.h"
+extern "C" {
+#include "eeprom.h"
 }
 
-void goInFig8(USBMouse *mouseP){
-  Fig8 fig8(60,5);
-  while(1){
-    XYCoords coords=fig8.deltaStep();
-    ((USBMouse*)mouseP)->move(coords.x, coords.y);
-    Thread::wait(10);
-  }
-}
+#define EN_PIN          D0
+#define EEPROM_SAVE_PIN D1
+#define FUNC1_PIN       D2
+#define FUNC2_PIN       D3
+#define FUNC3_PIN       D4
+#define FUNC4_PIN       D5
 
 int main() {
-  Thread thread;
-  myled.write(1);
-
-  circlesEn.mode(PullDown);
-  fig8En.mode(PullDown);
-  while(1){
-     if(circlesEn.read() == 1)
-          {
-               USBMouse mouse;
-               thread.start(&mouse,goInCircles);
-               Thread::wait(osWaitForever);
-          }
-          else if(fig8En.read() == 1)
-          {
-               USBMouse mouse;
-               thread.start(&mouse,goInFig8);
-               Thread::wait(osWaitForever);
-          }
-     }
-     Thread::wait(0.1);
+  Controller controller(LED1,
+                        FUNC1_PIN,
+                        FUNC2_PIN,
+                        FUNC3_PIN,
+                        FUNC4_PIN,
+                        EN_PIN,
+                        EEPROM_SAVE_PIN);
+  return 0;
 }
