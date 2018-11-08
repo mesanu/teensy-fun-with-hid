@@ -1,4 +1,4 @@
-#include "mbed.h"
+#include <mbed.h>
 #include "USBMouseKeyboard.h"
 
 #define PULSE_INTERVAL 0.5
@@ -8,6 +8,7 @@
 #define FUNC2_EVENT_FLAG 1 << 2
 #define FUNC3_EVENT_FLAG 1 << 3
 #define FUNC4_EVENT_FLAG 1 << 4
+#define SAVE_EVENT_FLAG 1 << 5
 
 class Controller{
   public:
@@ -21,12 +22,12 @@ class Controller{
     void start(void);
   private:
     USBMouseKeyboard device;
-    InterruptIn function1;
-    InterruptIn function2;
-    InterruptIn function3;
-    InterruptIn function4;
-    InterruptIn en_config;
-    InterruptIn save_to_eeprom;
+    InterruptIn func1_interrupt;
+    InterruptIn func2_interrupt;
+    InterruptIn func3_interrupt;
+    InterruptIn func4_interrupt;
+    InterruptIn en_interrupt;
+    InterruptIn save_interrupt;
 
     EventFlags events;
 
@@ -43,6 +44,13 @@ class Controller{
     void func3(void);
     void func4(void);
     void main_controller(void);
+
+    void func1_event(void);
+    void func2_event(void);
+    void func3_event(void);
+    void func4_event(void);
+    void en_event(void);
+    void save_event(void);
 
     void led_pulse(int times);
 };

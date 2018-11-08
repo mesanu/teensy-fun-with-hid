@@ -10,10 +10,22 @@ Controller::Controller(PinName led,
                   PinName func4,
                   PinName enable,
                   PinName save_to_eeprom):
-                  function1(func1, PullDown),function2(func2,PullDown),
-                  function3(func3,PullDown),function4(func4,PullDown),
-                  en_config(enable,PullDown),save_to_eeprom(save_to_eeprom,PullDown),
+                  func1_interrupt(func1,PullDown),
+                  func2_interrupt(func2,PullDown),
+                  func3_interrupt(func3,PullDown),
+                  func4_interrupt(func4,PullDown),
+                  en_interrupt(enable,PullDown),
+                  save_interrupt(save_to_eeprom,PullDown),
                   led1(led) {
+  func1_interrupt.rise(this,&Controller::func1_event);
+  func2_interrupt.rise(this,&Controller::func2_event);
+  func3_interrupt.rise(this,&Controller::func3_event);
+  func4_interrupt.rise(this,&Controller::func4_event);
+  en_interrupt.rise(this,&Controller::en_event);
+  save_interrupt.rise(this,&Controller::save_event);
+}
+
+void Controller::main_controller(){
 
 }
 
@@ -26,6 +38,26 @@ void Controller::led_pulse(int times){
   }
 }
 
-void Controller::main_controller(){
+void Controller::func1_event() {
+  this->events.set(FUNC1_EVENT_FLAG);
+}
 
+void Controller::func2_event() {
+  events.set(FUNC2_EVENT_FLAG);
+}
+
+void Controller::func3_event() {
+  events.set(FUNC3_EVENT_FLAG);
+}
+
+void Controller::func4_event() {
+  events.set(FUNC4_EVENT_FLAG);
+}
+
+void Controller::en_event() {
+  events.set(EN_EVENT_FLAG);
+}
+
+void Controller::save_event() {
+  events.set(SAVE_EVENT_FLAG);
 }
