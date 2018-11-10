@@ -23,9 +23,6 @@ XYCoords Curve::deltaStep(){
   return dCoords;
 }
 
-void Curve::recalcCurrent(){
-}
-
 Circle::Circle(double radius,double freq){
   this->radius=radius;
   this->freq=freq;

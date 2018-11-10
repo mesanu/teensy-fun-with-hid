@@ -1,6 +1,5 @@
 #include <mbed.h>
-#include "rtos.h"
-#include "USBSerial.h"
+#include <stdlib.h>
 
 #include "controller.h"
 extern "C" {
@@ -13,8 +12,14 @@ extern "C" {
 #define FUNC2_PIN       D3
 #define FUNC3_PIN       D4
 #define FUNC4_PIN       D5
+#define ADC_NOISE       A0
+
+AnalogIn noise(ADC_NOISE);
+
+DigitalOut led1(LED1);
 
 int main() {
+  eeprom_initialize();
   Controller controller(LED1,
                         FUNC1_PIN,
                         FUNC2_PIN,
@@ -22,5 +27,7 @@ int main() {
                         FUNC4_PIN,
                         EN_PIN,
                         EEPROM_SAVE_PIN);
-  return 0;
+  controller.load_from_eeprom();
+  controller.start();
+  while(1);
 }
