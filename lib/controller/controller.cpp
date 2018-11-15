@@ -215,6 +215,9 @@ void Controller::func3(){
         #else
         device.putc(rand_char);
         #endif
+        if(!roll(F3_ROLL_I,F3_ROLL_MAX)){
+          return;
+        }
      }
     }
   }
