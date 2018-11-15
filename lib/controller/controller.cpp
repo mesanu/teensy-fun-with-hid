@@ -18,22 +18,26 @@ USBSerial serial;
 #define TRIGGER 99
 #endif
 
+#define RAND_CHAR_ASCII_OFFSET 65
+#define RAND_CHAR_ASCII_DIVISOR RAND_MAX/57
+
 InterruptIn test(D0);
 
 Controller::Controller(PinName led,
-                  PinName mac_or_pc,
                   PinName func1,
                   PinName func2,
                   PinName func3,
                   PinName func4,
                   PinName enable,
-                  PinName save_to_eeprom):
+                  PinName save_to_eeprom,
+                  PinName mac_or_pc):
                   func1_interrupt(func1,PullUp),
                   func2_interrupt(func2,PullUp),
                   func3_interrupt(func3,PullUp),
                   func4_interrupt(func4,PullUp),
                   en_interrupt(enable,PullUp),
                   save_interrupt(save_to_eeprom,PullUp),
+                  mac_or_pc_interrupt(mac_or_pc,PullUp),
                   led1(led)
                   #ifdef FWHID_DEBUG
                   , print_settings_interrupt(PRINT_SETTINGS_PIN, PullUp)
@@ -56,6 +60,7 @@ void Controller::start(){
   func4_interrupt.fall(this,&Controller::func4_event);
   en_interrupt.fall(this,&Controller::en_event);
   save_interrupt.fall(this,&Controller::save_event);
+  mac_or_pc_interrupt.fall(this,&Controller::mac_or_pc_event);
   #ifdef FWHID_DEBUG
   print_settings_interrupt.fall(this,&Controller::print_event);
   serial_dbg("Wired print event interrupt\n");
@@ -86,6 +91,7 @@ void Controller::main_controller(){
                   | FUNC3_EVENT_FLAG
                   | FUNC4_EVENT_FLAG
                   | SAVE_EVENT_FLAG
+                  | MAC_OR_PC_EVENT_FLAG
                   #ifdef FWHID_DEBUG
                   | PRINT_SETTINGS_EVENT_FLAG
                   #endif
@@ -140,6 +146,13 @@ void Controller::main_controller(){
       events.clear(SAVE_EVENT_FLAG);
       led_pulse(1);
     }
+    else if(events_list & MAC_OR_PC_EVENT_FLAG)
+    {
+      mac_or_pc = !mac_or_pc;
+      serial_dbg("mac_or_pc_Interrupt_triggered: %x, %d\n",events.get(),mac_or_pc);
+      events.clear(MAC_OR_PC_EVENT_FLAG);
+      led_pulse((int)mac_or_pc + 1);
+    }
     #ifdef FWHID_DEBUG
     else if(events_list & PRINT_SETTINGS_EVENT_FLAG){
       serial_dbg("print_Interrupt_triggered: %x\n",events.get());
@@ -163,9 +176,10 @@ void Controller::led_pulse(int times){
 void Controller::func1(){
   while(1){
     Thread::wait(THREAD_DELAY);
-    if(roll(func1_aggro)){
+    if(roll(func1_aggro,FUNC_AGGRO_MAX)){
+      #ifdef FWHID_DEBUG
       serial_dbg("Func1 activated\n");
-      #ifndef FWHID_DEBUG
+      #else
       if(mac_or_pc){
         device.keyCode(KEY_RLOGO,KEY_TAB);
       else{
@@ -179,9 +193,10 @@ void Controller::func1(){
 void Controller::func2(){
   while(1){
     Thread::wait(THREAD_DELAY);
-    if(roll(func2_aggro)){
+    if(roll(func2_aggro,FUNC_AGGRO_MAX)){
+      #ifdef FWHID_DEBUG
       serial_dbg("Func2 activated\n");
-      #ifndef FWHID_DEBUG
+      #else
       device.keyCode(KEY_CAPS_LOCK);
       #endif
     }
@@ -189,21 +204,33 @@ void Controller::func2(){
 }
 
 void Controller::func3(){
-  char* string[F3_MAX + 1] = {0};
+  char r_char;
   while(1){
     Thread::wait(THREAD_DELAY);
-    if(roll(func2_aggro)){
-      serial_dbg("Func3 activated\n");
-      #ifndef FWHID_DEBUG
-      rand_string(string,F2_MIN,F2_MAX);
-      device.printf("%s\n",string);
-      #endif
+    if(roll(func3_aggro,FUNC_AGGRO_MAX)){
+      while(1){
+        r_char = rand_char();
+        #ifdef FWHID_DEBUG
+        serial_dbg("Func3 activated: %c\n",r_char);
+        #else
+        device.putc(rand_char);
+        #endif
+     }
     }
   }
 }
 
 void Controller::func4(){
-
+  while(1){
+    Thread::wait(THREAD_DELAY);
+    if(roll(func4_aggro,FUNC_AGGRO_MAX)){
+      #ifdef FWHID_DEBUG
+      serial_dbg("Func4 activated\n");
+      #else
+      device.printf("%s\n",string);
+      #endif
+    }
+  }
 }
 
 void Controller::func1_event() {
@@ -228,6 +255,10 @@ void Controller::en_event() {
 
 void Controller::save_event() {
   events.set(SAVE_EVENT_FLAG);
+}
+
+void Controller::mac_or_pc_event(){
+  events.set(MAC_OR_PC_EVENT_FLAG);
 }
 
 #ifdef FWHID_DEBUG
@@ -268,8 +299,12 @@ void Controller::load_from_eeprom(){
   func4_aggro = (char)((enc_settings >> EEPROM_FUNC4_AGGRO) & 0b11);
 }
 
-void Controller::rand_string(char* str, char min, char max){
-
+char Controller::rand_char(){
+  uint32_t rand_num;
+  rand_mutex.lock();
+  rand_num = rand();
+  rand_mutex.unlock();
+  return (char)(rand_num/(RAND_CHAR_ASCII_DIVISOR) + RAND_CHAR_ASCII_OFFSET);
 }
 
 void Controller::serial_dbg(const char* format, ...){
@@ -281,10 +316,10 @@ void Controller::serial_dbg(const char* format, ...){
   #endif
 }
 
-bool Controller::roll(char aggro){
+bool Controller::roll(char i, char max){
   uint32_t thresh;
   uint32_t rand_num;
-  thresh = (RAND_MAX / (FUNC_AGGRO_MAX - 1)) * aggro;
+  thresh = (RAND_MAX / (max - 1)) * i;
   rand_mutex.lock();
   rand_num = rand();
   rand_mutex.unlock();
@@ -294,6 +329,7 @@ bool Controller::roll(char aggro){
 void Controller::print_settings(void){
   serial_dbg("---Controller Settings---\n");
   serial_dbg("Enabled :%d\n",(int)enabled_all);
+  serial_dbg("Mac or PC :%d\n",(int)mac_or_pc);
   serial_dbg("Function 1 Aggro :%d\n",func1_aggro);
   serial_dbg("Function 2 Aggro :%d\n",func2_aggro);
   serial_dbg("Function 3 Aggro :%d\n",func3_aggro);

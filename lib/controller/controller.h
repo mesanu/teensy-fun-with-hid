@@ -19,19 +19,20 @@
 #define FUNC3_EVENT_FLAG 1 << 3
 #define FUNC4_EVENT_FLAG 1 << 4
 #define SAVE_EVENT_FLAG 1 << 5
+#define MAC_OR_PC_EVENT_FLAG 1 << 6
 
 #ifdef FWHID_DEBUG
-#define PRINT_SETTINGS_EVENT_FLAG 1 << 6
+#define PRINT_SETTINGS_EVENT_FLAG 1 << 7
 #define PRINT_SETTINGS_PIN D12
 #endif
 
 #define MAIN_EN_SIGNAL 1
 #define FUNC_EN_SIGNAL 2
 
-#define THREAD_DELAY 30000
+#define THREAD_DELAY 15000
 
-#define F3_MIN 1
-#define F3_MAX 4
+#define F3_ROLL_I 3
+#define F3_ROLL_MAX 4
 
 
 
@@ -43,7 +44,8 @@ class Controller{
               PinName func3,
               PinName func4,
               PinName enable,
-              PinName save_to_eeprom);
+              PinName save_to_eeprom,
+              PinName mac_or_pc);
     void start(void);
     void load_from_eeprom();
   private:
@@ -59,6 +61,7 @@ class Controller{
     InterruptIn func4_interrupt;
     InterruptIn en_interrupt;
     InterruptIn save_interrupt;
+    InterruptIn mac_or_pc_interrupt;
     #ifdef FWHID_DEBUG
     InterruptIn print_settings_interrupt;
     #endif
@@ -79,8 +82,8 @@ class Controller{
     void func4(void);
     void save_to_eeprom(void);
     void main_controller(void);
-    bool roll(char aggro);
-    void rand_string(char *str, char min, char max);
+    bool roll(char i, char max);
+    char rand_char();
 
     void func1_event(void);
     void func2_event(void);
@@ -88,6 +91,7 @@ class Controller{
     void func4_event(void);
     void en_event(void);
     void save_event(void);
+    void mac_or_pc_event(void);
     #ifdef FWHID_DEBUG
     void print_event(void);
     #endif
