@@ -1,5 +1,9 @@
 #ifndef SHAPES_H
 #define PI 3.14159
+
+#include <mbed.h>
+#include "USBMouseKeyboard.h"
+
 typedef struct coords {
   double x;
   double y;
@@ -8,12 +12,13 @@ typedef struct coords {
 class Curve {
   public:
     Curve();
-    XYCoords deltaStep();
+    void move_mouse(USBMouseKeyboard *keyboard);
   protected:
     XYCoords prevCoords;
     XYCoords currentCoords;
     XYCoords dCoords;
-    virtual void recalcCurrent();
+    void deltaStep();
+    virtual void recalcCurrent() = 0;
     unsigned long long stepCount;
 };
 

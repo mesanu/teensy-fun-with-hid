@@ -19,9 +19,7 @@ USBSerial serial;
 #endif
 
 #define RAND_CHAR_ASCII_OFFSET 65
-#define RAND_CHAR_ASCII_DIVISOR RAND_MAX/57
-
-InterruptIn test(D0);
+#define RAND_CHAR_ASCII_MAX 57
 
 Controller::Controller(PinName led,
                   PinName func1,
@@ -38,7 +36,9 @@ Controller::Controller(PinName led,
                   en_interrupt(enable,PullUp),
                   save_interrupt(save_to_eeprom,PullUp),
                   mac_or_pc_interrupt(mac_or_pc,PullUp),
-                  led1(led)
+                  led1(led),
+                  circle(F4_CURVE_FREQ,F4_CURVE_DELAY),
+                  fig8(F4_CURVE_FREQ,F4_CURVE_DELAY)
                   #ifdef FWHID_DEBUG
                   , print_settings_interrupt(PRINT_SETTINGS_PIN, PullUp)
                   #endif
@@ -176,7 +176,7 @@ void Controller::led_pulse(int times){
 void Controller::func1(){
   while(1){
     Thread::wait(THREAD_DELAY);
-    if(roll(func1_aggro,FUNC_AGGRO_MAX)){
+    if(roll(FUNC_AGGRO_MAX) < func1_aggro){
       #ifdef FWHID_DEBUG
       serial_dbg("Func1 activated\n");
       #else
@@ -193,7 +193,7 @@ void Controller::func1(){
 void Controller::func2(){
   while(1){
     Thread::wait(THREAD_DELAY);
-    if(roll(func2_aggro,FUNC_AGGRO_MAX)){
+    if(roll(FUNC_AGGRO_MAX) < func2_aggro){
       #ifdef FWHID_DEBUG
       serial_dbg("Func2 activated\n");
       #else
@@ -207,16 +207,17 @@ void Controller::func3(){
   char r_char;
   while(1){
     Thread::wait(THREAD_DELAY);
-    if(roll(func3_aggro,FUNC_AGGRO_MAX)){
+    serial_dbg("Func3 activated\n");
+    if(roll(FUNC_AGGRO_MAX) < func3_aggro){
       while(1){
-        r_char = rand_char();
+        r_char = roll(RAND_CHAR_ASCII_MAX) + RAND_CHAR_ASCII_OFFSET;
         #ifdef FWHID_DEBUG
-        serial_dbg("Func3 activated: %c\n",r_char);
+        serial_dbg("Print char: %c\n",r_char);
         #else
         device.putc(rand_char);
         #endif
-        if(!roll(F3_ROLL_I,F3_ROLL_MAX)){
-          return;
+        if(roll(F3_ROLL_MAX) < F3_ROLL_I){
+          break;
         }
      }
     }
@@ -225,13 +226,29 @@ void Controller::func3(){
 
 void Controller::func4(){
   while(1){
+    uint32_t num_steps;
     Thread::wait(THREAD_DELAY);
-    if(roll(func4_aggro,FUNC_AGGRO_MAX)){
-      #ifdef FWHID_DEBUG
-      serial_dbg("Func4 activated\n");
-      #else
-      device.printf("%s\n",string);
-      #endif
+    serial_dbg("Func4 activated\n");
+    if(roll(FUNC_AGGRO_MAX) < func4_aggro){
+      num_steps = roll(F4_CURVE_FREQ);
+      if(roll(2)){
+        serial_dbg("picked circle\n");
+        for(int i=0;i<num_steps;i++){
+         #ifndef FWHID_DEBUG
+         circle.move_mouse(&device)
+         #endif
+         Thread::wait(F4_CURVE_DELAY);
+        }
+      }
+      else{
+        serial_dbg("picked fig8\n");
+        for(int i=0;i<num_steps;i++){
+         #ifndef FWHID_DEBUG
+         fig8.move_mouse(&device);
+         #endif
+         Thread::wait(F4_CURVE_DELAY);
+        }
+      }
     }
   }
 }
@@ -302,14 +319,6 @@ void Controller::load_from_eeprom(){
   func4_aggro = (char)((enc_settings >> EEPROM_FUNC4_AGGRO) & 0b11);
 }
 
-char Controller::rand_char(){
-  uint32_t rand_num;
-  rand_mutex.lock();
-  rand_num = rand();
-  rand_mutex.unlock();
-  return (char)(rand_num/(RAND_CHAR_ASCII_DIVISOR) + RAND_CHAR_ASCII_OFFSET);
-}
-
 void Controller::serial_dbg(const char* format, ...){
   #ifdef FWHID_DEBUG
   va_list args;
@@ -319,14 +328,18 @@ void Controller::serial_dbg(const char* format, ...){
   #endif
 }
 
-bool Controller::roll(char i, char max){
-  uint32_t thresh;
+int Controller::roll(unsigned int max){
+  uint32_t divisor;
   uint32_t rand_num;
-  thresh = (RAND_MAX / (max - 1)) * i;
-  rand_mutex.lock();
-  rand_num = rand();
-  rand_mutex.unlock();
-  return rand_num < thresh;
+  int ret;
+  divisor = RAND_MAX / max;
+  do{
+    rand_mutex.lock();
+    rand_num = rand();
+    rand_mutex.unlock();
+    ret = rand_num/divisor;
+  } while( ret == max);
+  return ret;
 }
 
 void Controller::print_settings(void){

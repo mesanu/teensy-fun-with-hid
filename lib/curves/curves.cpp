@@ -1,26 +1,31 @@
+#include <mbed.h>
 #include "curves.h"
+#include "USBMouseKeyboard.h"
 #include <math.h>
 
 Curve::Curve(){
-  this->prevCoords.x=0;
-  this->prevCoords.y=0;
-  this->currentCoords.x=0;
-  this->currentCoords.y=0;
-  this->dCoords.x=0;
-  this->dCoords.y=0;
-  this->stepCount=0;
+  prevCoords.x=0;
+  prevCoords.y=0;
+  currentCoords.x=0;
+  currentCoords.y=0;
+  dCoords.x=0;
+  dCoords.y=0;
+  stepCount=0;
 }
 
-XYCoords Curve::deltaStep(){
-  this->stepCount++;
-  recalcCurrent();
-  this->dCoords.x=this->currentCoords.x-prevCoords.x;
-  this->dCoords.y=this->currentCoords.y-prevCoords.y;
-  if(this->dCoords.x != 0 || this->dCoords.y != 0){
-    this->prevCoords=this->currentCoords;
-  }
+void Curve::move_mouse(USBMouseKeyboard *keyboard){
+  deltaStep();
+  keyboard->move(currentCoords.x, currentCoords.y);
+}
 
-  return dCoords;
+void Curve::deltaStep(){
+  stepCount++;
+  recalcCurrent();
+  dCoords.x=currentCoords.x-prevCoords.x;
+  dCoords.y=currentCoords.y-prevCoords.y;
+  if(dCoords.x != 0 || dCoords.y != 0){
+    prevCoords=currentCoords;
+  }
 }
 
 Circle::Circle(double radius,double freq){
@@ -29,9 +34,9 @@ Circle::Circle(double radius,double freq){
 }
 
 void Circle::recalcCurrent(){
-  this->stepCount++;
-  this->currentCoords.x=radius*cos(freq*2*PI*(double)(stepCount)/1000);
-  this->currentCoords.y=radius*sin(freq*2*PI*(double)(stepCount)/1000);
+  stepCount++;
+  currentCoords.x=radius*cos(freq*2*PI*(double)(stepCount)/1000);
+  currentCoords.y=radius*sin(freq*2*PI*(double)(stepCount)/1000);
 }
 
 Fig8::Fig8(double a, double freq){
@@ -42,10 +47,10 @@ Fig8::Fig8(double a, double freq){
 }
 
 void Fig8::recalcCurrent(){
-  this->stepCount++;
-  if((this->stepCount%this->thresh)==0){
-    this->sign*=(-1);
+  stepCount++;
+  if((stepCount%thresh)==0){
+    sign*=(-1);
   }
-  this->currentCoords.x+=2*this->sign;
-  this->currentCoords.y=a*sin(freq*2*PI*(double)(this->stepCount)/1000);
+  currentCoords.x+=2*sign;
+  currentCoords.y=a*sin(freq*2*PI*(double)(stepCount)/1000);
 }

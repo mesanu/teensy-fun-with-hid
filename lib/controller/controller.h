@@ -1,8 +1,10 @@
 #include <mbed.h>
+#include <stdint.h>
 #include "USBMouseKeyboard.h"
+#include "curves.h"
 
 #define PULSE_INTERVAL 0.25
-#define FUNC_AGGRO_MAX 4
+#define FUNC_AGGRO_MAX 3
 
 #define EEPROM_SAVE_ADDR 0
 
@@ -34,6 +36,9 @@
 #define F3_ROLL_I 3
 #define F3_ROLL_MAX 4
 
+#define F4_CURVE_FREQ 100
+#define F4_CURVE_DELAY 5
+#define F4_RADIUS 50
 
 
 class Controller{
@@ -54,6 +59,8 @@ class Controller{
 
     #ifndef FWHID_DEBUG
     USBMouseKeyboard device;
+    #else
+    int device;
     #endif
     InterruptIn func1_interrupt;
     InterruptIn func2_interrupt;
@@ -76,14 +83,16 @@ class Controller{
     Thread func4_thread;
     Thread main_controller_thread;
 
+    Circle circle;
+    Fig8 fig8;
+
     void func1(void);
     void func2(void);
     void func3(void);
     void func4(void);
     void save_to_eeprom(void);
     void main_controller(void);
-    bool roll(char i, char max);
-    char rand_char();
+    int roll(unsigned int max);
 
     void func1_event(void);
     void func2_event(void);
