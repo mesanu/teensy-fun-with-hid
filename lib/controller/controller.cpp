@@ -117,25 +117,25 @@ void Controller::main_controller(){
       led_pulse((int)enabled_all + 1);
     }
     else if(events_list & FUNC1_EVENT_FLAG){
-      func1_aggro = (func1_aggro + 1) % FUNC_AGGRO_MAX;
+      func1_aggro = (func1_aggro + 1) % (FUNC_AGGRO_MAX + 1);
       serial_dbg("FUNC1_Interrupt_triggered: %x, %d\n",events.get(),func1_aggro);
       events.clear(FUNC1_EVENT_FLAG);
       led_pulse(func1_aggro + 1);
     }
     else if(events_list & FUNC2_EVENT_FLAG){
-      func2_aggro = (func2_aggro + 1) % FUNC_AGGRO_MAX;
+      func2_aggro = (func2_aggro + 1) % (FUNC_AGGRO_MAX + 1);
       serial_dbg("FUNC2_Interrupt_triggered: %x, %d\n",events.get(),func2_aggro);
       events.clear(FUNC2_EVENT_FLAG);
       led_pulse(func2_aggro + 1);
     }
     else if(events_list & FUNC3_EVENT_FLAG){
-      func3_aggro = (func3_aggro + 1) % FUNC_AGGRO_MAX;
+      func3_aggro = (func3_aggro + 1) % (FUNC_AGGRO_MAX + 1);
       serial_dbg("FUNC3_Interrupt_triggered: %x, %d\n",events.get(),func3_aggro);
       events.clear(FUNC3_EVENT_FLAG);
       led_pulse(func3_aggro + 1);
     }
     else if(events_list & FUNC4_EVENT_FLAG){
-      func4_aggro = (func4_aggro + 1) % FUNC_AGGRO_MAX;
+      func4_aggro = (func4_aggro + 1) % (FUNC_AGGRO_MAX + 1);
       serial_dbg("FUNC4_Interrupt_triggered: %x, %d\n",events.get(),func4_aggro);
       events.clear(FUNC4_EVENT_FLAG);
       led_pulse(func4_aggro + 1);
@@ -228,8 +228,8 @@ void Controller::func4(){
   while(1){
     uint32_t num_steps;
     Thread::wait(THREAD_DELAY);
-    serial_dbg("Func4 activated\n");
     if(roll(FUNC_AGGRO_MAX) < func4_aggro){
+      serial_dbg("Func4 activated\n");
       num_steps = roll(F4_CURVE_FREQ);
       if(roll(2)){
         serial_dbg("picked circle\n");
