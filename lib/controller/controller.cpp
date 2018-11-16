@@ -84,18 +84,6 @@ void Controller::start(){
 
 void Controller::main_controller(){
   uint32_t events_list;
-  if(enabled_all){
-    func1_thread.signal_set(MAIN_EN_SIGNAL);
-    func2_thread.signal_set(MAIN_EN_SIGNAL);
-    func3_thread.signal_set(MAIN_EN_SIGNAL);
-    func4_thread.signal_set(MAIN_EN_SIGNAL);
-  }
-  else{
-    func1_thread.signal_clr(MAIN_EN_SIGNAL);
-    func2_thread.signal_clr(MAIN_EN_SIGNAL);
-    func3_thread.signal_clr(MAIN_EN_SIGNAL);
-    func4_thread.signal_clr(MAIN_EN_SIGNAL);
-  }
   while(1){
     events.wait_any(EN_EVENT_FLAG
                   | FUNC1_EVENT_FLAG
@@ -113,18 +101,6 @@ void Controller::main_controller(){
     if(events_list & EN_EVENT_FLAG){
       enabled_all = !enabled_all;
       serial_dbg("EN_Interrupt_triggered: %x, %d\n",events.get(),enabled_all);
-      if(enabled_all){
-        func1_thread.signal_set(MAIN_EN_SIGNAL);
-        func2_thread.signal_set(MAIN_EN_SIGNAL);
-        func3_thread.signal_set(MAIN_EN_SIGNAL);
-        func4_thread.signal_set(MAIN_EN_SIGNAL);
-      }
-      else{
-        func1_thread.signal_clr(MAIN_EN_SIGNAL);
-        func2_thread.signal_clr(MAIN_EN_SIGNAL);
-        func3_thread.signal_clr(MAIN_EN_SIGNAL);
-        func4_thread.signal_clr(MAIN_EN_SIGNAL);
-      }
       events.clear(EN_EVENT_FLAG);
       led_pulse((int)enabled_all + 1);
     }
@@ -188,8 +164,7 @@ void Controller::led_pulse(int times){
 void Controller::func1(){
   while(1){
     Thread::wait(THREAD_DELAY);
-    osSignalWait(MAIN_EN_SIGNAL,osWaitForever);
-    if(roll(FUNC_AGGRO_MAX) < func1_aggro){
+    if(enabled_all && (roll(FUNC_AGGRO_MAX) < func1_aggro)){
       #ifdef FWHID_DEBUG
       serial_dbg("Func1 activated\n");
       #else
@@ -206,8 +181,7 @@ void Controller::func1(){
 void Controller::func2(){
   while(1){
     Thread::wait(THREAD_DELAY);
-    osSignalWait(MAIN_EN_SIGNAL,osWaitForever);
-    if(roll(FUNC_AGGRO_MAX) < func2_aggro){
+    if(enabled_all && (roll(FUNC_AGGRO_MAX) < func2_aggro)){
       #ifdef FWHID_DEBUG
       serial_dbg("Func2 activated\n");
       #else
@@ -221,9 +195,8 @@ void Controller::func3(){
   char r_char;
   while(1){
     Thread::wait(THREAD_DELAY);
-    osSignalWait(MAIN_EN_SIGNAL,osWaitForever);
-    serial_dbg("Func3 activated\n");
-    if(roll(FUNC_AGGRO_MAX) < func3_aggro){
+    if(enabled_all && (roll(FUNC_AGGRO_MAX) < func3_aggro)){
+      serial_dbg("Func3 activated\n");
       while(1){
         r_char = roll(RAND_CHAR_ASCII_MAX) + RAND_CHAR_ASCII_OFFSET;
         #ifdef FWHID_DEBUG
@@ -243,8 +216,7 @@ void Controller::func4(){
   while(1){
     uint32_t num_steps;
     Thread::wait(THREAD_DELAY);
-    osSignalWait(MAIN_EN_SIGNAL,osWaitForever);
-    if(roll(FUNC_AGGRO_MAX) < func4_aggro){
+    if(enabled_all && (roll(FUNC_AGGRO_MAX) < func4_aggro)){
       serial_dbg("Func4 activated\n");
       num_steps = roll(F4_CURVE_FREQ);
       if(roll(2)){
