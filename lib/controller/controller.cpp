@@ -169,9 +169,10 @@ void Controller::func1(){
       serial_dbg("Func1 activated\n");
       #else
       if(mac_or_pc){
-        device.keyCode(KEY_RLOGO,KEY_TAB);
+        device.keyCode('\t',KEY_RLOGO);
+      }
       else{
-        device.keyCode(KEY_ALT,KEY_TAB);
+        device.keyCode('\t',KEY_ALT);
       }
       #endif
     }
@@ -202,7 +203,7 @@ void Controller::func3(){
         #ifdef FWHID_DEBUG
         serial_dbg("Print char: %c\n",r_char);
         #else
-        device.putc(rand_char);
+        device.putc(r_char);
         #endif
         if(roll(F3_ROLL_MAX) < F3_ROLL_I){
           break;
@@ -223,7 +224,7 @@ void Controller::func4(){
         serial_dbg("picked circle\n");
         for(int i=0;i<num_steps;i++){
          #ifndef FWHID_DEBUG
-         circle.move_mouse(&device)
+         circle.move_mouse(&device);
          #endif
          Thread::wait(F4_CURVE_DELAY);
         }

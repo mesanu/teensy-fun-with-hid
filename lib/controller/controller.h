@@ -38,7 +38,7 @@
 
 #define F4_CURVE_FREQ 100
 #define F4_CURVE_DELAY 5
-#define F4_RADIUS 50
+#define F4_RADIUS 10
 
 
 class Controller{
